@@ -1,0 +1,96 @@
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <stdexcept>
+#include <unordered_map>
+#include <vector>
+using std::map;
+#include <string>
+#include <unordered_set>
+using std::string;
+#include <utility>
+using std::make_pair;
+using std::pair;
+
+void OpenFile(std::ifstream &file) {
+  string file_name;
+  std::cin >> file_name;
+  file.open(file_name);
+  if (!(file.is_open())) {
+    std::cerr << "Error: Cannot open file: "<< file_name<< "." << std::endl;
+    throw std::invalid_argument("filename error");
+  }
+}
+
+map<char, char> ReadEncodingPairs() {
+  map<char, char> encoding_pair;
+  string temp; // temp string that will hold the two characters for encoding
+  while (std::cin >> temp) {
+    if (temp == "q") {
+      break;
+    }
+    if (temp.length() !=
+        2) { // making sure the inputed encoding pair has only 2 letters
+      std::cerr << "Error: Unknown encoding 'input'." << std::endl;
+      throw std::invalid_argument("encoding error");
+    }
+    char char1 = temp.at(0); // char1 is the key of the map
+    char char2 = temp.at(1); // char2 is the value of the map
+    if (encoding_pair.find(char1) != encoding_pair.end()) {
+      std::cerr << "The character '" << char1 << "' is encoded more than once."
+                << std::endl;
+      throw std::invalid_argument("encoding error");
+    }
+    encoding_pair.insert({char1, char2});
+  }
+  return encoding_pair;
+}
+
+void ApplyEncoding(string &single_line, const map<char, char> &encoding_list) {
+  for (size_t i = 0; i < single_line.length();
+       ++i) { // looks at each individual char in the string
+    for (auto element :
+         encoding_list) { // applies the encoding list to each char
+      if (single_line.at(i) == element.first) {
+        single_line.at(i) = element.second;
+        break; // break so that once the encoder finds a match it doesn't keep
+               // going and mix up
+      }
+    }
+  }
+}
+
+void ProcessFile(std::ifstream &file, const map<char, char> &e_list) {
+  string str;
+  std::vector<string> old_str_vector;
+  while (getline(file, str)) {
+    ApplyEncoding(str, e_list);
+    if (std::find(old_str_vector.begin(), old_str_vector.end(), str) !=
+        old_str_vector.end()) { // looks to see if the encoded string has
+                                // already been used
+      continue;
+    }
+    old_str_vector.insert(old_str_vector.begin(),
+                          str); // adds to new encoded str into the vector that
+                                // holds old encoded str
+    std::cout << str << std::endl;
+  }
+}
+
+int main() {
+  std::ifstream input;
+  try {
+    OpenFile(input);
+  } catch (std::invalid_argument &e) {
+    return 1;
+  }
+  try {
+    map<char, char> encoder_pair = ReadEncodingPairs();
+    ProcessFile(input, encoder_pair);
+  } catch (std::invalid_argument &e) {
+    return 1;
+  }
+  input.close();
+  return 0;
+}
